@@ -111,7 +111,7 @@ export async function getCostStats(where: any) {
       where: { projectId: { in: projectIds }, status: "PENDING" },
     }),
     prisma.costEntry.findMany({
-      where: { projectId: { in: projectIds }, status: { in: ["APPROVED", "PAID"] } } },
+      where: { projectId: { in: projectIds }, status: { in: ["APPROVED", "PAID"] } },
     }),
   ]);
 
