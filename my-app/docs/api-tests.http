@@ -1,0 +1,685 @@
+# ProjectHub API Tests
+# Import this file into VS Code with REST Client extension or use with HTTPie/curl
+
+### Base Configuration
+@baseUrl = http://localhost:3000/api
+@contentType = application/json
+
+### ============================================
+### AUTHENTICATION
+### ============================================
+
+### Login
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "admin@projecthub.com",
+  "password": "admin123"
+}
+
+### Register (SUPER_ADMIN only)
+POST {{baseUrl}}/auth/register
+Content-Type: {{contentType}}
+
+{
+  "name": "Novo Usuário",
+  "email": "novo@projecthub.com",
+  "password": "senha123",
+  "role": "COLLABORATOR"
+}
+
+### Forgot Password
+POST {{baseUrl}}/auth/forgot-password
+Content-Type: {{contentType}}
+
+{
+  "email": "admin@projecthub.com"
+}
+
+### Reset Password
+POST {{baseUrl}}/auth/reset-password
+Content-Type: {{contentType}}
+
+{
+  "token": "reset-token-here",
+  "password": "novaSenha123"
+}
+
+### Change Password
+POST {{baseUrl}}/auth/change-password
+Content-Type: {{contentType}}
+
+{
+  "currentPassword": "admin123",
+  "newPassword": "novaSenha123"
+}
+
+### Logout
+POST {{baseUrl}}/auth/logout
+Content-Type: {{contentType}}
+
+### ============================================
+### USERS
+### ============================================
+
+### List Users (with pagination and filters)
+GET {{baseUrl}}/users?page=1&pageSize=10&search=admin&role=ADMIN&sortBy=createdAt&sortOrder=desc
+
+### Get User by ID
+GET {{baseUrl}}/users/{{userId}}
+
+### Create User (SUPER_ADMIN or ADMIN)
+POST {{baseUrl}}/users
+Content-Type: {{contentType}}
+
+{
+  "name": "João Colaborador",
+  "email": "joao@projecthub.com",
+  "role": "COLLABORATOR",
+  "department": "Desenvolvimento",
+  "position": "Desenvolvedor Frontend",
+  "phone": "(11) 98765-4321"
+}
+
+### Update User
+PATCH {{baseUrl}}/users/{{userId}}
+Content-Type: {{contentType}}
+
+{
+  "name": "João Atualizado",
+  "department": "TI",
+  "phone": "(11) 91234-5678"
+}
+
+### Deactivate User (soft delete)
+DELETE {{baseUrl}}/users/{{userId}}
+
+### Reactivate User
+POST {{baseUrl}}/users/{{userId}}/activate
+
+### ============================================
+### CLIENTS
+### ============================================
+
+### List Clients
+GET {{baseUrl}}/clients?page=1&pageSize=10&search=Acme&sortBy=name&sortOrder=asc
+
+### Get Client by ID
+GET {{baseUrl}}/clients/{{clientId}}
+
+### Create Client
+POST {{baseUrl}}/clients
+Content-Type: {{contentType}}
+
+{
+  "name": "Acme Corporation",
+  "email": "contato@acme.com",
+  "phone": "(11) 3456-7890",
+  "document": "12.345.678/0001-90",
+  "website": "https://acme.com",
+  "notes": "Cliente estratégico desde 2023",
+  "address": {
+    "street": "Av. Paulista",
+    "number": "1000",
+    "complement": "Sala 501",
+    "neighborhood": "Bela Vista",
+    "city": "São Paulo",
+    "state": "SP",
+    "zipCode": "01310-100",
+    "country": "Brasil"
+  }
+}
+
+### Update Client
+PATCH {{baseUrl}}/clients/{{clientId}}
+Content-Type: {{contentType}}
+
+{
+  "name": "Acme Corp Brasil",
+  "phone": "(11) 3456-7891",
+  "notes": "Cliente estratégico - contrato renovado"
+}
+
+### Deactivate Client
+DELETE {{baseUrl}}/clients/{{clientId}}
+
+### List Client Projects
+GET {{baseUrl}}/clients/{{clientId}}/projects?page=1&pageSize=10
+
+### ============================================
+### PROJECTS
+### ============================================
+
+### List Projects
+GET {{baseUrl}}/projects?page=1&pageSize=10&status=ACTIVE&search=Website&sortBy=createdAt&sortOrder=desc
+
+### Get Project by ID
+GET {{baseUrl}}/projects/{{projectId}}
+
+### Create Project
+POST {{baseUrl}}/projects
+Content-Type: {{contentType}}
+
+{
+  "name": "Website Institucional",
+  "description": "Desenvolvimento do website institucional com blog e área de clientes",
+  "status": "ACTIVE",
+  "startDate": "2024-01-15",
+  "endDate": "2024-03-30",
+  "budget": 50000,
+  "clientId": "{{clientId}}",
+  "managerId": "{{userId}}",
+  "color": "#3b82f6",
+  "tags": [
+    { "type": "web", "isVisible": true },
+    { "type": "urgente", "isVisible": true }
+  ]
+}
+
+### Update Project
+PATCH {{baseUrl}}/projects/{{projectId}}
+Content-Type: {{contentType}}
+
+{
+  "name": "Website Institucional v2",
+  "status": "PAUSED",
+  "budget": 55000,
+  "description": "Projeto atualizado com novos requisitos"
+}
+
+### Archive Project (soft delete)
+DELETE {{baseUrl}}/projects/{{projectId}}
+
+### Reorder Projects
+PATCH {{baseUrl}}/projects/reorder
+Content-Type: {{contentType}}
+
+{
+  "projectIds": [
+    "project-id-1",
+    "project-id-2",
+    "project-id-3"
+  ]
+}
+
+### ============================================
+### PROJECT MEMBERS
+### ============================================
+
+### List Project Members
+GET {{baseUrl}}/projects/{{projectId}}/members
+
+### Add Member to Project
+POST {{baseUrl}}/projects/{{projectId}}/members
+Content-Type: {{contentType}}
+
+{
+  "userId": "{{userId}}",
+  "role": "MEMBER",
+  "customPermissions": {
+    "canViewTasks": true,
+    "canCreateTasks": true,
+    "canEditTasks": false,
+    "canDeleteTasks": false
+  }
+}
+
+### Update Member Permissions
+PATCH {{baseUrl}}/projects/{{projectId}}/members/{{memberId}}
+Content-Type: {{contentType}}
+
+{
+  "role": "ADMIN",
+  "customPermissions": {
+    "canViewTasks": true,
+    "canCreateTasks": true,
+    "canEditTasks": true,
+    "canDeleteTasks": true
+  }
+}
+
+### Remove Member from Project
+DELETE {{baseUrl}}/projects/{{projectId}}/members/{{memberId}}
+
+### ============================================
+### PROJECT SECTIONS
+### ============================================
+
+### List Project Sections
+GET {{baseUrl}}/projects/{{projectId}}/sections
+
+### Create Section
+POST {{baseUrl}}/projects/{{projectId}}/sections
+Content-Type: {{contentType}}
+
+{
+  "type": "CUSTOM",
+  "name": "Documentação Técnica",
+  "icon": "FileText",
+  "visibleToRoles": ["MANAGER", "ADMIN", "MEMBER"]
+}
+
+### Update Section
+PATCH {{baseUrl}}/projects/{{projectId}}/sections/{{sectionId}}
+Content-Type: {{contentType}}
+
+{
+  "name": "Documentação",
+  "visibleToRoles": ["MANAGER", "ADMIN", "MEMBER", "CLIENT"]
+}
+
+### Reorder Sections
+PATCH {{baseUrl}}/projects/{{projectId}}/sections/reorder
+Content-Type: {{contentType}}
+
+{
+  "sectionIds": [
+    "section-id-1",
+    "section-id-2",
+    "section-id-3"
+  ]
+}
+
+### Delete Section
+DELETE {{baseUrl}}/projects/{{projectId}}/sections/{{sectionId}}
+
+### ============================================
+### MEETINGS
+### ============================================
+
+### List Meetings
+GET {{baseUrl}}/projects/{{projectId}}/meetings?page=1&pageSize=10&status=SCHEDULED
+
+### Create Meeting
+POST {{baseUrl}}/projects/{{projectId}}/meetings
+Content-Type: {{contentType}}
+
+{
+  "title": "Reunião de Kick-off",
+  "date": "2024-04-01T14:00:00Z",
+  "duration": 60,
+  "type": "ONLINE",
+  "meetingUrl": "https://meet.google.com/abc-def-ghi",
+  "participantIds": ["{{userId}}"],
+  "status": "SCHEDULED",
+  "isVisibleToClient": true
+}
+
+### Get Meeting
+GET {{baseUrl}}/projects/{{projectId}}/meetings/{{meetingId}}
+
+### Update Meeting
+PATCH {{baseUrl}}/projects/{{projectId}}/meetings/{{meetingId}}
+Content-Type: {{contentType}}
+
+{
+  "title": "Reunião de Kick-off - Atualizada",
+  "status": "COMPLETED",
+  "minutes": {
+    "type": "doc",
+    "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "Ata da reunião..." }] }]
+  },
+  "decisions": ["Decisão 1", "Decisão 2"],
+  "nextSteps": [
+    { "description": "Criar wireframes", "responsibleId": "{{userId}}", "dueDate": "2024-04-10T23:59:00Z" }
+  ]
+}
+
+### Delete Meeting
+DELETE {{baseUrl}}/projects/{{projectId}}/meetings/{{meetingId}}
+
+### Convert Next Steps to Tasks
+POST {{baseUrl}}/projects/{{projectId}}/meetings/{{meetingId}}/convert-to-tasks
+Content-Type: {{contentType}}
+
+{
+  "nextStepIndices": [0]
+}
+
+### Export Meeting Minutes
+GET {{baseUrl}}/projects/{{projectId}}/meetings/{{meetingId}}/export
+
+### ============================================
+### PROPOSALS
+### ============================================
+
+### List Proposals
+GET {{baseUrl}}/projects/{{projectId}}/proposals?page=1&pageSize=10
+
+### Create Proposal
+POST {{baseUrl}}/projects/{{projectId}}/proposals
+Content-Type: {{contentType}}
+
+{
+  "title": "Proposta de Desenvolvimento Website",
+  "scope": {
+    "type": "doc",
+    "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "Escopo do projeto..." }] }]
+  },
+  "items": [
+    { "description": "Desenvolvimento Frontend", "category": "Desenvolvimento", "quantity": 1, "unitValue": 25000 },
+    { "description": "Desenvolvimento Backend", "category": "Desenvolvimento", "quantity": 1, "unitValue": 20000 }
+  ],
+  "paymentTerms": "50% na assinatura, 50% na entrega",
+  "validUntil": "2024-12-31T23:59:59Z",
+  "isVisibleToClient": false
+}
+
+### Get Proposal
+GET {{baseUrl}}/projects/{{projectId}}/proposals/{{proposalId}}
+
+### Update Proposal
+PATCH {{baseUrl}}/projects/{{projectId}}/proposals/{{proposalId}}
+Content-Type: {{contentType}}
+
+{
+  "status": "SENT"
+}
+
+### Approve Proposal
+POST {{baseUrl}}/projects/{{projectId}}/proposals/{{proposalId}}/approve
+
+### Delete Proposal
+DELETE {{baseUrl}}/projects/{{projectId}}/proposals/{{proposalId}}
+
+### ============================================
+### GANTT
+### ============================================
+
+### List Gantt Items
+GET {{baseUrl}}/projects/{{projectId}}/gantt
+
+### Create Gantt Item
+POST {{baseUrl}}/projects/{{projectId}}/gantt
+Content-Type: {{contentType}}
+
+{
+  "name": "Fase 1 - Planejamento",
+  "description": "Planejamento detalhado do projeto",
+  "startDate": "2024-04-01T00:00:00Z",
+  "endDate": "2024-04-15T23:59:59Z",
+  "responsibleId": "{{userId}}",
+  "color": "#3b82f6",
+  "category": "Planejamento"
+}
+
+### Update Gantt Item
+PATCH {{baseUrl}}/projects/{{projectId}}/gantt/{{ganttItemId}}
+Content-Type: {{contentType}}
+
+{
+  "progress": 50,
+  "endDate": "2024-04-20T23:59:59Z"
+}
+
+### Delete Gantt Item
+DELETE {{baseUrl}}/projects/{{projectId}}/gantt/{{ganttItemId}}
+
+### Bulk Update Gantt Items
+PATCH {{baseUrl}}/projects/{{projectId}}/gantt/bulk-update
+Content-Type: {{contentType}}
+
+{
+  "items": [
+    { "id": "{{ganttItemId}}", "order": 0, "progress": 75 }
+  ]
+}
+
+### ============================================
+### TASKS
+### ============================================
+
+### List Tasks (List View)
+GET {{baseUrl}}/projects/{{projectId}}/tasks?page=1&pageSize=10&status=TODO&status=IN_PROGRESS
+
+### List Tasks (Kanban View)
+GET {{baseUrl}}/projects/{{projectId}}/tasks?view=kanban
+
+### Create Task
+POST {{baseUrl}}/projects/{{projectId}}/tasks
+Content-Type: {{contentType}}
+
+{
+  "title": "Implementar tela de login",
+  "priority": "HIGH",
+  "status": "TODO",
+  "dueDate": "2024-05-15T23:59:00Z",
+  "estimatedHours": 8,
+  "assigneeIds": ["{{userId}}"],
+  "tags": ["frontend", "auth"],
+  "checklistItems": [
+    { "text": "Criar formulário", "completed": false },
+    { "text": "Integrar API", "completed": false }
+  ]
+}
+
+### Get Task
+GET {{baseUrl}}/projects/{{projectId}}/tasks/{{taskId}}
+
+### Update Task
+PATCH {{baseUrl}}/projects/{{projectId}}/tasks/{{taskId}}
+Content-Type: {{contentType}}
+
+{
+  "status": "IN_PROGRESS",
+  "progress": 50
+}
+
+### Delete Task (Soft Delete)
+DELETE {{baseUrl}}/projects/{{projectId}}/tasks/{{taskId}}
+
+### Hard Delete Task
+DELETE {{baseUrl}}/projects/{{projectId}}/tasks/{{taskId}}?hard=true
+
+### Reorder Tasks (Kanban Drag & Drop)
+PATCH {{baseUrl}}/projects/{{projectId}}/tasks/reorder
+Content-Type: {{contentType}}
+
+{
+  "tasks": [
+    { "id": "{{taskId}}", "columnId": "{{columnId}}", "order": 0, "status": "IN_PROGRESS" }
+  ]
+}
+
+### ============================================
+### TASK COMMENTS
+### ============================================
+
+### List Task Comments
+GET {{baseUrl}}/projects/{{projectId}}/tasks/{{taskId}}/comments
+
+### Create Comment
+POST {{baseUrl}}/projects/{{projectId}}/tasks/{{taskId}}/comments
+Content-Type: {{contentType}}
+
+{
+  "content": "Ótimo progresso! @{{userId}} pode revisar?",
+  "mentions": ["{{userId}}"]
+}
+
+### ============================================
+### TASK LOGS (TIME TRACKING)
+### ============================================
+
+### List Task Logs
+GET {{baseUrl}}/projects/{{projectId}}/tasks/{{taskId}}/logs
+
+### Log Hours
+POST {{baseUrl}}/projects/{{projectId}}/tasks/{{taskId}}/logs
+Content-Type: {{contentType}}
+
+{
+  "hoursLogged": 4.5,
+  "date": "2024-04-15T00:00:00Z",
+  "description": "Desenvolvimento da tela de login"
+}
+
+### ============================================
+### KANBAN COLUMNS
+### ============================================
+
+### List Kanban Columns
+GET {{baseUrl}}/projects/{{projectId}}/kanban-columns
+
+### Create Column
+POST {{baseUrl}}/projects/{{projectId}}/kanban-columns
+Content-Type: {{contentType}}
+
+{
+  "name": "Em Teste",
+  "color": "#f59e0b",
+  "taskStatus": "REVIEW"
+}
+
+### Reorder Columns
+PATCH {{baseUrl}}/projects/{{projectId}}/kanban-columns
+Content-Type: {{contentType}}
+
+{
+  "columnIds": ["{{columnId}}", "{{columnId2}}"]
+}
+
+### ============================================
+### COSTS
+### ============================================
+
+### List Costs
+GET {{baseUrl}}/projects/{{projectId}}/costs?page=1&pageSize=10&type=ACTUAL
+
+### Create Cost Entry
+POST {{baseUrl}}/projects/{{projectId}}/costs
+Content-Type: {{contentType}}
+
+{
+  "date": "2024-04-15T00:00:00Z",
+  "category": "Pessoal",
+  "description": "Hora técnica - Desenvolvedor Sênior",
+  "amount": 12000.00,
+  "type": "ACTUAL",
+  "status": "PENDING",
+  "costCenter": "Desenvolvimento"
+}
+
+### Get Cost
+GET {{baseUrl}}/projects/{{projectId}}/costs/{{costId}}
+
+### Update Cost
+PATCH {{baseUrl}}/projects/{{projectId}}/costs/{{costId}}
+Content-Type: {{contentType}}
+
+{
+  "status": "APPROVED",
+  "amount": 12500.00
+}
+
+### Approve Cost
+POST {{baseUrl}}/projects/{{projectId}}/costs/{{costId}}/approve
+
+### Delete Cost
+DELETE {{baseUrl}}/projects/{{projectId}}/costs/{{costId}}
+
+### Export Costs (CSV)
+GET {{baseUrl}}/projects/{{projectId}}/costs/export?format=csv&from=2024-01-01&to=2024-12-31
+
+### ============================================
+### NOTES
+### ============================================
+
+### List Notes
+GET {{baseUrl}}/projects/{{projectId}}/notes?page=1&pageSize=10&pinned=true
+
+### Create Note
+POST {{baseUrl}}/projects/{{projectId}}/notes
+Content-Type: {{contentType}}
+
+{
+  "title": "Notas da reunião de alinhamento",
+  "content": {
+    "type": "doc",
+    "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "Conteúdo da nota..." }] }]
+  },
+  "visibility": "INTERNAL",
+  "status": "PUBLISHED",
+  "folder": "Reuniões",
+  "tags": ["alinhamento", "estratégia"],
+  "isPinned": true
+}
+
+### Get Note
+GET {{baseUrl}}/projects/{{projectId}}/notes/{{noteId}}
+
+### Update Note
+PATCH {{baseUrl}}/projects/{{projectId}}/notes/{{noteId}}
+Content-Type: {{contentType}}
+
+{
+  "title": "Notas atualizadas",
+  "isPinned": false
+}
+
+### Delete Note
+DELETE {{baseUrl}}/projects/{{projectId}}/notes/{{noteId}}
+
+### List Note History
+GET {{baseUrl}}/projects/{{projectId}}/notes/{{noteId}}/history
+
+### Get Specific History Version
+GET {{baseUrl}}/projects/{{projectId}}/notes/{{noteId}}/history/{{historyId}}
+
+### Restore Note Version
+POST {{baseUrl}}/projects/{{projectId}}/notes/{{noteId}}/restore
+Content-Type: {{contentType}}
+
+{
+  "historyId": "{{historyId}}"
+}
+
+### ============================================
+### NOTIFICATIONS
+### ============================================
+
+### List Notifications (Unread)
+GET {{baseUrl}}/notifications?isRead=false&page=1&pageSize=20
+
+### Mark All as Read
+PATCH {{baseUrl}}/notifications
+
+### Mark Single as Read
+PATCH {{baseUrl}}/notifications/{{notificationId}}/read
+
+### ============================================
+### AUDIT LOGS
+### ============================================
+
+### List Audit Logs
+GET {{baseUrl}}/audit?page=1&pageSize=20&projectId={{projectId}}
+
+### ============================================
+### CRON JOBS
+### ============================================
+
+### Run Task Reminders Cron
+POST {{baseUrl}}/cron/task-reminders
+Authorization: Bearer {{cronSecret}}
+
+### ============================================
+### VARIABLES (update these after running requests)
+### ============================================
+
+@userId = 550e8400-e29b-41d4-a716-446655440000
+@clientId = 550e8400-e29b-41d4-a716-446655440001
+@projectId = 550e8400-e29b-41d4-a716-446655440002
+@memberId = 550e8400-e29b-41d4-a716-446655440003
+@sectionId = 550e8400-e29b-41d4-a716-446655440004
+@meetingId = 550e8400-e29b-41d4-a716-446655440005
+@proposalId = 550e8400-e29b-41d4-a716-446655440006
+@ganttItemId = 550e8400-e29b-41d4-a716-446655440007
+@taskId = 550e8400-e29b-41d4-a716-446655440008
+@columnId = 550e8400-e29b-41d4-a716-446655440009
+@costId = 550e8400-e29b-41d4-a716-44665544000a
+@noteId = 550e8400-e29b-41d4-a716-44665544000b
+@historyId = 550e8400-e29b-41d4-a716-44665544000c
+@notificationId = 550e8400-e29b-41d4-a716-44665544000d
+@cronSecret = your-cron-secret-here

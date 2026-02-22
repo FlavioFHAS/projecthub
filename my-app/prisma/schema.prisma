@@ -1,0 +1,476 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  COLLABORATOR
+  CLIENT
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  role          UserRole  @default(COLLABORATOR)
+  status        UserStatus @default(ACTIVE)
+  company       String?
+  phone         String?
+  bio           String?
+  lastLoginAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+  ownedProjects Project[] @relation("ProjectOwner")
+  projectMembers ProjectMember[]
+  taskAssignees TaskAssignee[]
+  comments      Comment[]
+  notes         Note[]
+  notifications Notification[]
+  auditLogs     AuditLog[]
+
+  @@map("users")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verificationtokens")
+}
+
+model Client {
+  id          String   @id @default(cuid())
+  name        String
+  email       String?
+  phone       String?
+  website     String?
+  address     String?
+  city        String?
+  state       String?
+  country     String?
+  zipCode     String?
+  logo        String?
+  description String?
+  status      String   @default("ACTIVE")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  projects Project[]
+
+  @@map("clients")
+}
+
+enum ProjectStatus {
+  PLANNING
+  IN_PROGRESS
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
+model Project {
+  id          String        @id @default(cuid())
+  name        String
+  description String?
+  status      ProjectStatus @default(PLANNING)
+  priority    String        @default("MEDIUM")
+  color       String?
+  coverUrl    String?
+  startDate   DateTime?
+  endDate     DateTime?
+  budget      Float?
+  tags        String[]
+  isPublic    Boolean       @default(false)
+  order       Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  clientId String?
+  client   Client? @relation(fields: [clientId], references: [id])
+
+  ownerId String
+  owner   User   @relation("ProjectOwner", fields: [ownerId], references: [id])
+
+  members      ProjectMember[]
+  sections     Section[]
+  tasks        Task[]
+  meetings     Meeting[]
+  proposals    Proposal[]
+  ganttItems   GanttItem[]
+  costs        CostEntry[]
+  notes        Note[]
+
+  @@map("projects")
+}
+
+enum ProjectMemberRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+model ProjectMember {
+  id          String            @id @default(cuid())
+  role        ProjectMemberRole @default(MEMBER)
+  permissions Json?
+  joinedAt    DateTime          @default(now())
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@map("project_members")
+}
+
+enum SectionType {
+  MEETINGS
+  PROPOSALS
+  GANTT
+  TASKS
+  COSTS
+  NOTES
+}
+
+model Section {
+  id          String      @id @default(cuid())
+  type        SectionType
+  title       String?
+  isVisible   Boolean     @default(true)
+  order       Int         @default(0)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, type])
+  @@map("sections")
+}
+
+model Meeting {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  date        DateTime
+  duration    Int?
+  attendees   String[]
+  notes       String?
+  status      String   @default("SCHEDULED")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("meetings")
+}
+
+enum ProposalStatus {
+  DRAFT
+  SENT
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+}
+
+model Proposal {
+  id          String         @id @default(cuid())
+  title       String
+  description String?
+  content     String?
+  value       Float?
+  status      ProposalStatus @default(DRAFT)
+  sentAt      DateTime?
+  validUntil  DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("proposals")
+}
+
+model GanttItem {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  startDate   DateTime
+  endDate     DateTime
+  progress    Int       @default(0)
+  dependencies String[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("gantt_items")
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  IN_REVIEW
+  COMPLETED
+  CANCELLED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+model Task {
+  id          String       @id @default(cuid())
+  title       String
+  description String?
+  status      TaskStatus   @default(TODO)
+  priority    TaskPriority @default(MEDIUM)
+  dueDate     DateTime?
+  estimatedHours Int?
+  actualHours    Int?
+  order       Int          @default(0)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  createdById String
+  assignees   TaskAssignee[]
+  logs        TaskLog[]
+  comments    Comment[]
+
+  @@map("tasks")
+}
+
+model TaskAssignee {
+  id     String @id @default(cuid())
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, userId])
+  @@map("task_assignees")
+}
+
+model TaskLog {
+  id        String   @id @default(cuid())
+  action    String
+  details   Json?
+  createdAt DateTime @default(now())
+
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@map("task_logs")
+}
+
+model KanbanColumn {
+  id     String @id @default(cuid())
+  name   String
+  order  Int    @default(0)
+  color  String?
+  taskLimit Int?
+
+  @@map("kanban_columns")
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@map("comments")
+}
+
+enum CostType {
+  LABOR
+  MATERIAL
+  SERVICE
+  SOFTWARE
+  HARDWARE
+  TRAVEL
+  OTHER
+}
+
+enum CostStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PAID
+}
+
+model CostEntry {
+  id          String    @id @default(cuid())
+  description String
+  type        CostType
+  amount      Float
+  quantity    Int       @default(1)
+  unitPrice   Float?
+  status      CostStatus @default(PENDING)
+  date        DateTime
+  receiptUrl  String?
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("cost_entries")
+}
+
+model Note {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  version   Int      @default(1)
+  isPinned  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  history NoteHistory[]
+
+  @@map("notes")
+}
+
+model NoteHistory {
+  id        String   @id @default(cuid())
+  content   String
+  version   Int
+  createdAt DateTime @default(now())
+
+  noteId String
+  note   Note   @relation(fields: [noteId], references: [id], onDelete: Cascade)
+
+  @@map("note_history")
+}
+
+enum NotificationType {
+  TASK_ASSIGNED
+  TASK_COMPLETED
+  PROJECT_INVITE
+  MEETING_REMINDER
+  PROPOSAL_APPROVED
+  COST_APPROVED
+  COMMENT_MENTION
+  SYSTEM
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  type      NotificationType
+  title     String
+  message   String
+  data      Json?
+  isRead    Boolean          @default(false)
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  EXPORT
+  IMPORT
+  APPROVE
+  REJECT
+}
+
+model AuditLog {
+  id        String     @id @default(cuid())
+  action    AuditAction
+  entity    String
+  entityId  String?
+  oldData   Json?
+  newData   Json?
+  metadata  Json?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime   @default(now())
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("audit_logs")
+}
