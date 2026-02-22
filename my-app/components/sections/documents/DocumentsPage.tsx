@@ -51,7 +51,7 @@ import {
   getFileTypeConfig,
   generateConfigItemId,
 } from "@/lib/sections/section-config";
-import { toast } from "sonn";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { AddDocumentModal } from "./AddDocumentModal";
 import { AddFolderModal } from "./AddFolderModal";
